@@ -25,3 +25,7 @@ Route::get('/dashboard', function () {
 Route::get('/posts/create', function () {
     return view('posts.create'); 
 })->name('posts.create');
+
+Route::get('/feed', function () {
+    return view('feed');
+});
