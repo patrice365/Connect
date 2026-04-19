@@ -14,6 +14,17 @@
         </div>
     @endif
 
+    <!-- Tips Section -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h3 class="font-semibold text-blue-900 mb-2">💡 Tips:</h3>
+        <ul class="text-sm text-blue-800 space-y-1">
+            <li>• Save as Draft to write and edit later</li>
+            <li>• Publish Now to share with your audience immediately</li>
+            <li>• You can edit or delete your posts anytime</li>
+            <li>• Maximum 5000 characters per post</li>
+        </ul>
+    </div>
+
     <form action="{{ route('posts.store') }}" method="POST" class="bg-white shadow rounded-lg p-6">
         @csrf
 
@@ -61,17 +72,6 @@
                 class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg text-center transition">
                 Cancel
             </a>
-        </div>
-
-        <!-- Help Text -->
-        <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 class="font-semibold text-blue-900 mb-2">💡 Tips:</h3>
-            <ul class="text-sm text-blue-800 space-y-1">
-                <li>• Save as Draft to write and edit later</li>
-                <li>• Publish Now to share with your audience</li>
-                <li>• You can always edit or delete your posts</li>
-                <li>• Published posts can be moved to trash after 30 days</li>
-            </ul>
         </div>
     </form>
 </div>
