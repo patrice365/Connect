@@ -99,14 +99,23 @@ return new class extends Migration
                 $table->boolean('is_featured')->default(false);
             }
 
-            // Indexes for performance
+            // Indexes for performance – with conditional checks to avoid duplicates
             $indexes = Schema::getIndexes('posts');
-            $indexExists = collect($indexes)->contains(fn($idx) => $idx['name'] === 'posts_user_id_status_index');
-            if (!$indexExists) {
+
+            $hasUserStatusIndex = collect($indexes)->contains(fn($idx) => $idx['name'] === 'posts_user_id_status_index');
+            if (!$hasUserStatusIndex) {
                 $table->index(['user_id', 'status']);
             }
-            $table->index('published_at');
-            $table->index('trashed_at');
+
+            $hasPublishedAtIndex = collect($indexes)->contains(fn($idx) => $idx['name'] === 'posts_published_at_index');
+            if (!$hasPublishedAtIndex) {
+                $table->index('published_at');
+            }
+
+            $hasTrashedAtIndex = collect($indexes)->contains(fn($idx) => $idx['name'] === 'posts_trashed_at_index');
+            if (!$hasTrashedAtIndex) {
+                $table->index('trashed_at');
+            }
         });
     }
 

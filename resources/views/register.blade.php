@@ -131,8 +131,8 @@
         <a href="/" class="logo">CON<span>NECT</span></a>
         <p class="subtitle">Elevate your social management</p>
 
-        <form action="/login" method="GET">
-            <input type="hidden" name="registered" value="true">
+        <form action="/register" method="POST">
+            @csrf
             <div class="form-group">
                 <label>Full Name</label>
                 <input type="text" placeholder="e.g. Alex Rivera" required>
