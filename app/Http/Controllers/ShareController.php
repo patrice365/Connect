@@ -38,11 +38,10 @@ class ShareController extends Controller
         $shared = [];
         foreach ($userAccounts as $account) {
             try {
-                // In production, use SDK for each platform (Twitter API, Facebook Graph API, etc.)
+                // In production, use SDK for each platform
                 $this->shareToProvider($account->provider, $post, $account);
                 $shared[] = ucfirst($account->provider);
             } catch (\Exception $e) {
-                // Log error but continue with other platforms
                 \Log::error("Failed to share to {$account->provider}: " . $e->getMessage());
             }
         }
@@ -51,7 +50,6 @@ class ShareController extends Controller
             return back()->with('error', 'Failed to share post to any platform.');
         }
 
-        // Increment shares count
         $post->increment('shares_count');
 
         return back()->with('success', 'Post shared to: ' . implode(', ', $shared));
@@ -59,34 +57,21 @@ class ShareController extends Controller
 
     /**
      * Share post to a specific provider
-     * 
-     * @param string $provider
-     * @param Post $post
-     * @param \App\Models\SocialAccount $account
      */
     private function shareToProvider($provider, Post $post, $account)
     {
-        // This is a placeholder implementation
-        // In production, use the respective SDKs:
-        // - Twitter: twitter/twitter-api-php or GuzzleHttp
-        // - Facebook: facebook/php-sdk-v4
-        // - LinkedIn: linkedin/linkedin-api-sdk
-
         $url = route('posts.show', $post->id);
         $message = $post->content . "\n\n" . $url;
 
         switch ($provider) {
             case 'twitter':
-                // Use Twitter API to post tweet
-                // $this->postToTwitter($account->access_token, $message);
+                // Implement Twitter API
                 break;
             case 'facebook':
-                // Use Facebook Graph API to post
-                // $this->postToFacebook($account->access_token, $message);
+                // Implement Facebook API
                 break;
             case 'linkedin':
-                // Use LinkedIn API to post
-                // $this->postToLinkedIn($account->access_token, $message);
+                // Implement LinkedIn API
                 break;
         }
     }
