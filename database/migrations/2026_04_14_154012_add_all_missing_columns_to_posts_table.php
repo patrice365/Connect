@@ -100,7 +100,11 @@ return new class extends Migration
             }
 
             // Indexes for performance
-            $table->index(['user_id', 'status']);
+            $indexes = Schema::getIndexes('posts');
+            $indexExists = collect($indexes)->contains(fn($idx) => $idx['name'] === 'posts_user_id_status_index');
+            if (!$indexExists) {
+                $table->index(['user_id', 'status']);
+            }
             $table->index('published_at');
             $table->index('trashed_at');
         });
