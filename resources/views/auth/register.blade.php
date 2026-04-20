@@ -149,7 +149,7 @@
         </form>
 
         <div class="auth-footer">
-            Part of the hub? <a href="/login">Sign in here</a>
+            Part of the hub? <a href="/login">Login here</a>
         </div>
     </div>
 </body>
