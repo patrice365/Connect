@@ -11,55 +11,23 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'username',
         'email',
         'password',
-        'username',   // Added because your migration includes a username column
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }
-
-    // Relationships (example)
-    public function posts()
-    {
-        return $this->hasMany(Post::class);
-    }
-
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function socialAccounts()
-    {
-        return $this->hasMany(SocialAccount::class);
     }
 }

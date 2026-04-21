@@ -61,8 +61,10 @@ return [
             // ],
         ],
 
+        // Resend API driver (requires resend/resend-laravel package)
         'resend' => [
             'transport' => 'resend',
+            // The API key is automatically read from RESEND_API_KEY in .env
         ],
 
         'sendmail' => [
@@ -116,3 +118,5 @@ return [
     ],
 
 ];
+
+
