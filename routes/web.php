@@ -1,6 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+Route::get('/feed', [PostController::class, 'index'])->name('feed');
+Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+Route::get('/feed', [PostController::class, 'index']);
 
 // The Home Page
 Route::get('/', function () {
