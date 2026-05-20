@@ -74,9 +74,9 @@ body { display: flex; background: #0a0a0a; color: #ffffff; height: 100vh; overfl
     <a href="/dashboard">Dashboard</a>
     <a href="/feed">Activity Feed</a>
     <a href="/posts/create" class="active">Create Post</a>
-    <a href="#">Settings</a>
-    <a href="#">Profile</a>
-    <a href="#">Archive</a>
+    <a href="/settings">Settings</a>
+    <a href="/profile">Profile</a>
+    <a href="/archive">Archive</a>
 </nav>
 
 <div class="main-wrapper">

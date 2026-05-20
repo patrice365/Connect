@@ -3,33 +3,42 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 
-Route::get('/feed', [PostController::class, 'index'])->name('feed');
-Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
-
-// The Home Page
+// 1. Landing & Auth Routes
 Route::get('/', function () {
     return view('welcome');
 });
 
-// The Register Page (Where "Get Started" goes)
 Route::get('/register', function () {
     return view('register');
 });
 
-// The Login Page
 Route::get('/login', function () {
     return view('login');
 });
 
-// The Dashboard Page
+// 2. Core App Layout & Feed
 Route::get('/dashboard', function () {
     return view('Layouts.app');
 });
 
+Route::get('/feed', [PostController::class, 'index'])->name('feed');
+
+// 3. Post Management
 Route::get('/posts/create', function () {
     return view('posts.create'); 
 })->name('posts.create');
 
-Route::get('/feed', function () {
-    return view('feed');
+Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+
+// 4. New App Views (Settings, Profile, Archive)
+Route::get('/settings', function () {
+    return view('settings');
+});
+
+Route::get('/profile', function () {
+    return view('profile');
+});
+
+Route::get('/archive', function () {
+    return view('archive');
 });

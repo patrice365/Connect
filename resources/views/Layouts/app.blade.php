@@ -119,9 +119,9 @@ body { display: flex; background: #0a0a0a; color: #ffffff; height: 100vh; overfl
     <a href="/dashboard" class="active">Dashboard</a>
     <a href="/feed">Activity Feed</a>
     <a href="/posts/create">Create Post</a>
-    <a href="#">Settings</a>
-    <a href="#">Profile</a>
-    <a href="#">Archive</a>
+    <a href="/settings">Settings</a>
+    <a href="/profile">Profile</a>
+    <a href="/archive">Archive</a>
 </nav>
 
 <div class="main-wrapper">
@@ -137,10 +137,10 @@ body { display: flex; background: #0a0a0a; color: #ffffff; height: 100vh; overfl
             <div class="avatar"></div>
         </div>
         <div class="user-dropdown" id="userDropdown">
-            <a href="#">Profile</a>
+            <a href="/profile">Profile</a>
             <a href="#">Drafts <span>4</span></a>
-            <a href="#">Archive</a>
-            <a href="#">Settings</a>
+            <a href="/archive">Archive</a>
+            <a href="/settings">Settings</a>
             <a href="/" style="color:#f87171;">Log-out</a>
         </div>
     </div>
