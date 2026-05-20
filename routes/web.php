@@ -9,6 +9,20 @@ use App\Http\Controllers\ShareController;
 use App\Http\Controllers\CaptchaController;
 use Illuminate\Support\Facades\Route;
 
+// 1. Landing & Auth Routes
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/register', function () {
+    return view('register');
+});
+
+Route::get('/login', function () {
+    return view('login');
+});
+
+// 2. Core App Layout & Feed
 // ======================
 // PUBLIC ROUTES
 // ======================
@@ -52,10 +66,32 @@ Route::view('/', 'welcome')->name('home');
 // ======================
 
 // Dashboard – requires login, verified email, and human verification
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('/feed', [PostController::class, 'index'])->name('feed');
+
+// 3. Post Management
+Route::get('/posts/create', function () {
+    return view('posts.create'); 
+})->name('posts.create');
+
+Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+
+// 4. New App Views (Settings, Profile, Archive)
+Route::get('/settings', function () {
+    return view('settings');
+});
+
+Route::get('/profile', function () {
+    return view('profile');
+});
+
+Route::get('/archive', function () {
+    return view('archive');
+});
 // Human verification (CAPTCHA after email verification)
 Route::controller(CaptchaController::class)
     ->middleware(['auth', 'verified'])

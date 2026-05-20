@@ -18,35 +18,8 @@ class PostController extends Controller
     // Display list of published posts
     public function index()
     {
-        $posts = Auth::user()->posts()->published()->latest('published_at')->paginate(10);
-        return view('posts.index', compact('posts'));
-    }
-
-    // Show drafts
-    public function drafts()
-    {
-        $posts = Auth::user()->posts()->drafts()->latest()->paginate(10);
-        return view('posts.drafts', compact('posts'));
-    }
-
-    // Show trash page
-    public function trash()
-    {
-        $posts = Auth::user()->posts()->trashed()->latest('trashed_at')->paginate(10);
-        return view('posts.trash', compact('posts'));
-    }
-
-    // Show archive page
-    public function archive()
-    {
-        $posts = Auth::user()->posts()->archived()->latest('archived_at')->paginate(10);
-        return view('posts.archive', compact('posts'));
-    }
-
-    // Display a single post
-    public function show(Post $post)
-    {
-        return view('posts.show', compact('post'));
+        $posts = Post::latest()->get();
+        return view('feed', compact('posts'));
     }
 
     public function create()
