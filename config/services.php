@@ -35,9 +35,22 @@ return [
         ],
     ],
 
+    // =============================================
+    // GOOGLE RECAPTCHA v2
+    // =============================================
     'recaptcha' => [
-        'key' => env('RECAPTCHA_SITE_KEY'),
+        'key'    => env('RECAPTCHA_SITE_KEY'),
         'secret' => env('RECAPTCHA_SECRET_KEY'),
+    ],
+
+    // =============================================
+    // YOUTUBE (GOOGLE CLOUD)
+    // Uses Socialite "google" driver
+    // =============================================
+    'google' => [
+        'client_id'     => env('YOUTUBE_CLIENT_ID'),
+        'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
+        'redirect'      => env('APP_URL').'/social/callback/youtube',
     ],
 
 ];

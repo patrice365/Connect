@@ -18,7 +18,7 @@ class ShareController extends Controller
 
         $request->validate([
             'platforms' => 'required|array|min:1',
-            'platforms.*' => 'required|string|in:twitter,facebook,linkedin',
+            'platforms.*' => 'required|string|in:twitter,facebook',
         ]);
 
         // Check if post is published
@@ -69,9 +69,6 @@ class ShareController extends Controller
                 break;
             case 'facebook':
                 // Implement Facebook API
-                break;
-            case 'linkedin':
-                // Implement LinkedIn API
                 break;
         }
     }

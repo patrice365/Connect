@@ -45,6 +45,9 @@ class LoginRequest extends FormRequest
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
+            // Temporary debug – remove after testing
+            dd('Authentication failed for email: ' . $this->input('email'));
+
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
@@ -52,6 +55,7 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
     }
+
 
     /**
      * Ensure the login request is not rate limited.

@@ -55,7 +55,7 @@
             .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
     </style>
-    @stack('styles')
+    <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 <body>
 
@@ -73,9 +73,9 @@
     <a href="#">Profile</a>
     <a href="#">Archive</a>
 
-    {{-- Logout button --}}
-    <form method="POST" action="{{ route('logout') }}" style="margin-top: 20px;">
-        @csrf
+    
+    <form method="POST" action="<?php echo e(route('logout')); ?>" style="margin-top: 20px;">
+        <?php echo csrf_field(); ?>
         <button type="submit"
                 style="width:100%; text-align:left; background:none; border:none; color:#f87171; font-weight:600; font-size:inherit; cursor:pointer; padding:14px 18px; border-radius:12px; font-family:inherit;">
             Logout
@@ -89,22 +89,22 @@
     <div class="topbar-left">
         <button class="menu-toggle" id="menuToggle">☰</button>
         <div class="logo">CON<span>NECT</span></div>
-        <form action="{{ route('posts.index') }}" method="GET" style="display: inline;">
-            <input class="search" name="search" placeholder="Search posts..." value="{{ request('search') }}">
+        <form action="<?php echo e(route('posts.index')); ?>" method="GET" style="display: inline;">
+            <input class="search" name="search" placeholder="Search posts..." value="<?php echo e(request('search')); ?>">
         </form>
     </div>
     <div class="user-menu-container">
         <div class="profile-trigger" id="profileTrigger">
-            <span style="color:#94a3b8;">{{ Auth::user()->name ?? 'User Name' }}</span>
+            <span style="color:#94a3b8;"><?php echo e(Auth::user()->name ?? 'User Name'); ?></span>
             <div class="avatar"></div>
         </div>
         <div class="user-dropdown" id="userDropdown">
-            <a href="{{ route('profile.edit') }}">Profile</a>
-            <a href="{{ route('posts.drafts') }}">Drafts</a>
-            <a href="{{ route('posts.archive') }}">Archive</a>
+            <a href="<?php echo e(route('profile.edit')); ?>">Profile</a>
+            <a href="<?php echo e(route('posts.drafts')); ?>">Drafts</a>
+            <a href="<?php echo e(route('posts.archive')); ?>">Archive</a>
             <a href="#">Settings</a>
-            <form method="POST" action="{{ route('logout') }}" style="display: inline;">
-                @csrf
+            <form method="POST" action="<?php echo e(route('logout')); ?>" style="display: inline;">
+                <?php echo csrf_field(); ?>
                 <a href="#" onclick="event.preventDefault(); this.closest('form').submit();" style="color:#f87171;">Log-out</a>
             </form>
         </div>
@@ -112,7 +112,7 @@
 </header>
 
 <div class="content-body">
-    @yield('content')
+    <?php echo $__env->yieldContent('content'); ?>
 </div>
 
 </div>
@@ -131,7 +131,8 @@
     profileTrigger.onclick = (e) => { e.stopPropagation(); userDropdown.classList.toggle('show'); };
     window.onclick = () => { userDropdown.classList.remove('show'); };
 </script>
-@stack('scripts')
+<?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
 
+<?php /**PATH C:\xampp\htdocs\Connect\resources\views/layouts/app.blade.php ENDPATH**/ ?>

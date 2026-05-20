@@ -10,7 +10,11 @@ class SocialAccount extends Model
     protected $table = 'social_accounts';
 
     protected $fillable = [
-        'user_id', 'platform', 'platform_user_id', 'access_token', 'refresh_token'
+        'user_id',
+        'provider',          
+        'provider_user_id', 
+        'access_token',
+        'refresh_token',
     ];
 
     protected $casts = [

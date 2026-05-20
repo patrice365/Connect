@@ -292,7 +292,7 @@
 
         <p>
             The elite workspace to manage and amplify your digital presence. Seamlessly integrate
-            <span class="sources">Facebook, Instagram, Twitter/X, YouTube and more</span>
+            <span class="sources">YouTube</span>
             into a single, high-performance hub.
         </p>
 
@@ -317,7 +317,6 @@
                     <div class="social-icons">
                         <a href="#"><i class="fab fa-facebook"></i></a>
                         <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
                     </div>
                     <span class="copyright">&copy; 2026 Connect Inc.</span>
                 </div>

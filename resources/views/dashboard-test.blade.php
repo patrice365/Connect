@@ -1,0 +1,1 @@
+<h1 style="color:white;">Dashboard works – no layout</h1>

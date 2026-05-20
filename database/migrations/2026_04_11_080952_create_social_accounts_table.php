@@ -11,13 +11,11 @@ return new class extends Migration
         Schema::create('social_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('provider');          // twitter, facebook, linkedin
+            $table->string('provider');
             $table->string('provider_user_id');
-            $table->string('access_token')->nullable();
-            $table->string('refresh_token')->nullable();
-            $table->timestamp('expires_at')->nullable();
+            $table->text('access_token')->nullable();
+            $table->text('refresh_token')->nullable();
             $table->timestamps();
-            $table->unique(['provider', 'provider_user_id']);
         });
     }
 

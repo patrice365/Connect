@@ -10,15 +10,24 @@ class PostController extends Controller
 {
     public function __construct()
     {
-        // The authorizeResource method is provided by the AuthorizesRequests trait
-        // which is included in the base Controller class.
         $this->authorizeResource(Post::class, 'post');
     }
 
-    // Display list of published posts
-    public function index()
+    /**
+     * Display a list of the user's published posts, with optional search.
+     */
+    public function index(Request $request)
     {
-        $posts = Auth::user()->posts()->published()->latest('published_at')->paginate(10);
+        $query = Auth::user()->posts()->published()->latest('published_at');
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%')
+                  ->orWhere('content', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $posts = $query->paginate(10);
         return view('posts.index', compact('posts'));
     }
 
@@ -29,14 +38,14 @@ class PostController extends Controller
         return view('posts.drafts', compact('posts'));
     }
 
-    // Show trash page
+    // Show trash
     public function trash()
     {
         $posts = Auth::user()->posts()->trashed()->latest('trashed_at')->paginate(10);
         return view('posts.trash', compact('posts'));
     }
 
-    // Show archive page
+    // Show archive
     public function archive()
     {
         $posts = Auth::user()->posts()->archived()->latest('archived_at')->paginate(10);

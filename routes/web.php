@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
@@ -12,51 +13,23 @@ use Illuminate\Support\Facades\Route;
 // ======================
 // PUBLIC ROUTES
 // ======================
-
 Route::view('/', 'welcome')->name('home');
 
-// Debug route – get the verification URL for the latest user
-// Route::get('/verification-url', function () {
-//     $user = \App\Models\User::latest()->first();
-//     if (!$user) {
-//         return 'No user found. Register first.';
-//     }
-//     return url()->temporarySignedRoute(
-//         'verification.verify',
-//         now()->addMinutes(60),
-//         ['id' => $user->id, 'hash' => sha1($user->email)]
-//     );
-// });
-
-// // Test mail logging
-// Route::get('/test-mail', function () {
-//     \Illuminate\Support\Facades\Mail::raw('This is a test email body.', function ($message) {
-//         $message->to('test@example.com')->subject('Test Mail Logging');
-//     });
-//     return 'Mail sent. Check storage/logs/laravel.log';
-// });
-
-// Route::get('/force-resend', function () {
-//     config(['mail.default' => 'resend']);
-//     config(['services.resend.key' => env('RESEND_API_KEY')]);
-
-//     \Illuminate\Support\Facades\Mail::raw('Forced Resend test', function ($message) {
-//         $message->to('your-real-email@gmail.com')
-//                 ->subject('Forced Resend');
-//     });
-//     return 'Forced email sent.';
-// });
+// Temporary debug route – shows Facebook OAuth config
+Route::get('/debug-config', function () {
+    dd(config('services.facebook'));
+});
 
 // ======================
 // AUTHENTICATED ROUTES
 // ======================
 
-// Dashboard – requires login, verified email, and human verification
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard – requires login, verified email
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-// Human verification (CAPTCHA after email verification)
+// Human verification (CAPTCHA after email verification) – optional, keep if needed
 Route::controller(CaptchaController::class)
     ->middleware(['auth', 'verified'])
     ->prefix('verify-human')
@@ -71,7 +44,7 @@ Route::middleware('auth')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); // fixed typo
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Posts – custom routes before resource
     Route::get('/posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
@@ -96,24 +69,39 @@ Route::middleware('auth')->group(function () {
 
     // Share post
     Route::post('/posts/{post}/share', [ShareController::class, 'share'])->name('posts.share');
-    });
+});
 
-    // Route::get('/test-resend', function () {
-    //     \Illuminate\Support\Facades\Mail::raw('This is a direct test from Connect.', function ($message) {
-    //         $message->to('patrice404.husain@gmail.com') // <-- Use your real email here!
-    //                 ->subject('Resend Test Email');
-    //     });
-    //     return 'Test email sent to your inbox!';
-    // });
+    Route::view('/privacy-policy', 'privacy-policy')->name('privacy.policy');
 
-    // Route::get('/force-resend', function () {
-    //     config(['mail.default' => 'resend']);
-    //     \Illuminate\Support\Facades\Mail::raw('Forced Resend test', function ($message) {
-    //         $message->to('patrice404.husain@gmail.com')
-    //                 ->subject('Forced Resend');
-    //     });
-    //     return 'Forced email sent. Check inbox/resend dashboard.';
-    // });
+    Route::get('/youtube/comments/{videoId}', function ($videoId) {
+        $user = auth()->user();
+        $account = $user->socialAccounts()->where('provider', 'youtube')->first();
+        if (!$account) return response()->json(['error' => 'Not connected'], 403);
+
+        try {
+            $comments = Http::get('https://www.googleapis.com/youtube/v3/commentThreads', [
+                'part'         => 'snippet',
+                'videoId'      => $videoId,
+                'maxResults'   => 20,
+                'order'        => 'time',
+                'access_token' => $account->access_token,
+            ])->json();
+
+            $formatted = [];
+            foreach ($comments['items'] ?? [] as $item) {
+                $snippet = $item['snippet']['topLevelComment']['snippet'];
+                $formatted[] = [
+                    'authorDisplayName'     => $snippet['authorDisplayName'],
+                    'authorProfileImageUrl' => $snippet['authorProfileImageUrl'],
+                    'textDisplay'           => $snippet['textDisplay'],
+                    'publishedAt'           => \Carbon\Carbon::parse($snippet['publishedAt'])->diffForHumans(),
+                ];
+            }
+            return response()->json(['comments' => $formatted]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Unable to load comments.'], 500);
+        }
+    })->middleware('auth')->name('youtube.comments');
 // ======================
 // AUTHENTICATION ROUTES (Breeze)
 // ======================
