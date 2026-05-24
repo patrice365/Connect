@@ -13,6 +13,7 @@ class Post extends Model
 
     protected $fillable = [
         'user_id',
+        'title',                // ← added
         'content',
         'status',
         'published_at',
@@ -37,21 +38,28 @@ class Post extends Model
         'parent_post_id',
         'is_pinned',
         'is_featured',
+        // ---- New fields for platform publishing ----
+        'video_path',
+        'thumbnail_path',
+        'youtube_video_id',
+        'file_size',
+        'github_repo_id',
+        'platform',             // 'youtube' or 'github'
     ];
 
     protected $casts = [
-        'platform_status' => 'array',
-        'platform_ids' => 'array',
-        'media_urls' => 'array',
-        'published_at' => 'datetime',
-        'drafted_at' => 'datetime',
-        'trashed_at' => 'datetime',
-        'archived_at' => 'datetime',
-        'deleted_at' => 'datetime',
-        'allow_comments' => 'boolean',
-        'allow_sharing' => 'boolean',
-        'is_pinned' => 'boolean',
-        'is_featured' => 'boolean',
+        'platform_status'   => 'array',
+        'platform_ids'      => 'array',
+        'media_urls'        => 'array',
+        'published_at'      => 'datetime',
+        'drafted_at'        => 'datetime',
+        'trashed_at'        => 'datetime',
+        'archived_at'       => 'datetime',
+        'deleted_at'        => 'datetime',
+        'allow_comments'    => 'boolean',
+        'allow_sharing'     => 'boolean',
+        'is_pinned'         => 'boolean',
+        'is_featured'       => 'boolean',
     ];
 
     // ========== RELATIONSHIPS ==========
@@ -120,7 +128,7 @@ class Post extends Model
     public function moveToTrash(): void
     {
         $this->update([
-            'status' => 'trash',
+            'status'     => 'trash',
             'trashed_at' => Carbon::now(),
         ]);
     }
@@ -128,8 +136,8 @@ class Post extends Model
     public function restoreFromTrash(): void
     {
         $this->update([
-            'status' => 'publish',
-            'trashed_at' => null,
+            'status'       => 'publish',
+            'trashed_at'   => null,
             'published_at' => Carbon::now(),
         ]);
     }
@@ -142,7 +150,7 @@ class Post extends Model
     public function archive(): void
     {
         $this->update([
-            'status' => 'archive',
+            'status'      => 'archive',
             'archived_at' => Carbon::now(),
         ]);
     }
@@ -150,8 +158,8 @@ class Post extends Model
     public function restoreFromArchive(): void
     {
         $this->update([
-            'status' => 'publish',
-            'archived_at' => null,
+            'status'       => 'publish',
+            'archived_at'  => null,
             'published_at' => Carbon::now(),
         ]);
     }
@@ -159,7 +167,7 @@ class Post extends Model
     public function publish(): void
     {
         $this->update([
-            'status' => 'publish',
+            'status'       => 'publish',
             'published_at' => Carbon::now(),
         ]);
     }

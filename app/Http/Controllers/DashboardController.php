@@ -31,6 +31,7 @@ class DashboardController extends Controller
 
         $socialStats = [
             'youtube' => array_merge($this->getYoutubeInfo($user), ['connected' => in_array('youtube', $connectedPlatforms)]),
+            'github'  => array_merge($this->getGithubInfo($user),  ['connected' => in_array('github', $connectedPlatforms)]),
         ];
 
         return view('dashboard', compact('stats', 'socialStats'));
@@ -42,11 +43,12 @@ class DashboardController extends Controller
         $account = $user->socialAccounts()->where('provider', 'youtube')->first();
         if (!$account) {
             return [
-                'channel_name' => null,
-                'subscribers'  => 0,
-                'views'        => 0,
-                'videos'       => 0,
-                'recent'       => [],
+                'channel_name'      => null,
+                'channel_thumbnail' => null,          // ← new
+                'subscribers'       => 0,
+                'views'             => 0,
+                'videos'            => 0,
+                'recent'            => [],
             ];
         }
 
@@ -60,11 +62,12 @@ class DashboardController extends Controller
             $channel = $ch['items'][0] ?? null;
             if (!$channel) {
                 return [
-                    'channel_name' => null,
-                    'subscribers'  => 0,
-                    'views'        => 0,
-                    'videos'       => 0,
-                    'recent'       => [],
+                    'channel_name'      => null,
+                    'channel_thumbnail' => null,          // ← new
+                    'subscribers'       => 0,
+                    'views'             => 0,
+                    'videos'            => 0,
+                    'recent'            => [],
                 ];
             }
 
@@ -112,21 +115,56 @@ class DashboardController extends Controller
             }
 
             return [
-                'channel_name' => $channel['snippet']['title'] ?? null,
-                'subscribers'  => $channel['statistics']['subscriberCount'] ?? 0,
-                'views'        => $channel['statistics']['viewCount'] ?? 0,
-                'videos'       => $channel['statistics']['videoCount'] ?? 0,
-                'recent'       => $recent,
+                'channel_name'      => $channel['snippet']['title'] ?? null,
+                'channel_thumbnail' => $channel['snippet']['thumbnails']['default']['url'] ?? null,   // ← new
+                'subscribers'       => $channel['statistics']['subscriberCount'] ?? 0,
+                'views'             => $channel['statistics']['viewCount'] ?? 0,
+                'videos'            => $channel['statistics']['videoCount'] ?? 0,
+                'recent'            => $recent,
             ];
         } catch (\Exception $e) {
             \Log::error('YouTube API error: ' . $e->getMessage());
             return [
-                'channel_name' => null,
-                'subscribers'  => 0,
-                'views'        => 0,
-                'videos'       => 0,
-                'recent'       => [],
+                'channel_name'      => null,
+                'channel_thumbnail' => null,          // ← new
+                'subscribers'       => 0,
+                'views'             => 0,
+                'videos'            => 0,
+                'recent'            => [],
             ];
         }
     }
+
+    private function getGithubInfo($user)
+    {
+        $account = $user->socialAccounts()->where('provider', 'github')->first();
+        if (!$account) {
+            return [
+                'username'   => null,
+                'repos'      => 0,
+                'followers'  => 0,
+                'avatar'     => null,
+                'bio'        => null,
+            ];
+        }
+
+        try {
+            $response = Http::withToken($account->access_token)
+                ->get('https://api.github.com/user');
+
+            $data = $response->json();
+
+            return [
+                'username'   => $data['login'] ?? null,
+                'repos'      => $data['public_repos'] ?? 0,
+                'followers'  => $data['followers'] ?? 0,
+                'avatar'     => $data['avatar_url'] ?? null,
+                'bio'        => $data['bio'] ?? null,
+            ];
+        } catch (\Exception $e) {
+            \Log::error('GitHub API error: ' . $e->getMessage());
+            return ['username' => null, 'repos' => 0, 'followers' => 0, 'avatar' => null, 'bio' => null];
+        }
+    }
 }
+

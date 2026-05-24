@@ -11,7 +11,7 @@ use Laravel\Socialite\Facades\Socialite;
 
 class SocialAccountController extends Controller
 {
-    protected $providers = ['youtube'];
+    protected $providers = ['youtube', 'github'];
 
     public function redirect(Request $request, string $provider)
     {
@@ -24,6 +24,12 @@ class SocialAccountController extends Controller
                 ->scopes(['https://www.googleapis.com/auth/youtube.readonly'])
                 ->redirect();
         }
+
+        if ($provider === 'github') {
+            return Socialite::driver('github')
+                ->scopes(['read:user'])   // minimal scope
+                ->redirect();
+        }
     }
 
     public function callback(Request $request, string $provider)
@@ -32,6 +38,7 @@ class SocialAccountController extends Controller
 
         $driver = match ($provider) {
             'youtube' => 'google',
+            'github'  => 'github',
         };
 
         try {

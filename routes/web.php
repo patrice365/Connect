@@ -41,6 +41,11 @@ Route::controller(CaptchaController::class)
 // General authenticated routes
 Route::middleware('auth')->group(function () {
 
+    // Settings page (authenticated)
+    Route::get('/settings', function () {
+        return view('settings');
+    })->name('settings');
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -50,6 +55,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/posts/drafts', [PostController::class, 'drafts'])->name('posts.drafts');
     Route::get('/posts/trash', [PostController::class, 'trash'])->name('posts.trash');
     Route::get('/posts/archive', [PostController::class, 'archive'])->name('posts.archive');
+    // Video post creation (alias for posts.create)
+    Route::get('/posts/video/create', [PostController::class, 'create'])->name('posts.video.create');
+    // Video post submission alias (points to same store action)
+    Route::post('/posts/video', [PostController::class, 'store'])->name('posts.video.store');
     Route::resource('posts', PostController::class);
     Route::patch('/posts/{post}/restore', [PostController::class, 'restore'])->name('posts.restore');
     Route::delete('/posts/{post}/force-delete', [PostController::class, 'forceDelete'])->name('posts.force-delete');
@@ -69,7 +78,7 @@ Route::middleware('auth')->group(function () {
 
     // Share post
     Route::post('/posts/{post}/share', [ShareController::class, 'share'])->name('posts.share');
-});
+    });
 
     Route::view('/privacy-policy', 'privacy-policy')->name('privacy.policy');
 
@@ -102,6 +111,8 @@ Route::middleware('auth')->group(function () {
             return response()->json(['error' => 'Unable to load comments.'], 500);
         }
     })->middleware('auth')->name('youtube.comments');
+
+    Route::view('/terms-of-service', 'terms-of-service')->name('terms.service');
 // ======================
 // AUTHENTICATION ROUTES (Breeze)
 // ======================

@@ -37,7 +37,8 @@
         .btn-new:hover { background: #38bdf8; transform: translateY(-1px); }
         .user-menu-container { position: relative; }
         .profile-trigger { display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 8px 16px; border-radius: 50px; background: #121212; border: 1px solid #2d2d2d; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #0ea5e9; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }   /* updated to allow img */
+        .avatar-placeholder { width: 32px; height: 32px; border-radius: 50%; background: #0ea5e9; }  /* fallback circle */
         .user-dropdown { position: absolute; top: 60px; right: 0; width: 220px; background: #181818; border: 1px solid #2d2d2d; border-radius: 12px; display: none; z-index: 1000; }
         .user-dropdown.show { display: block; }
         .user-dropdown a { display: flex; justify-content: space-between; padding: 14px 20px; color: #cbd5e1; text-decoration: none; }
@@ -67,11 +68,21 @@
         <button class="menu-toggle" id="hideToggle">☰</button>
     </div>
 
-    <a href="/dashboard" class="active">Dashboard</a>
-    <a href="/posts/create">Create Post</a>
-    <a href="#">Settings</a>
-    <a href="#">Profile</a>
-    <a href="#">Archive</a>
+    {{-- Dynamic sidebar links --}}
+    <a href="{{ route('dashboard') }}"
+       class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+
+    <a href="{{ route('posts.create') }}"
+       class="{{ request()->routeIs('posts.create') ? 'active' : '' }}">Create Post</a>
+
+    <a href="{{ route('settings') }}"
+       class="{{ request()->routeIs('settings') ? 'active' : '' }}">Settings</a>
+
+    <a href="{{ route('profile.edit') }}"
+       class="{{ request()->routeIs('profile.edit') ? 'active' : '' }}">Profile</a>
+
+    <a href="{{ route('posts.archive') }}"
+       class="{{ request()->routeIs('posts.archive') ? 'active' : '' }}">Archive</a>
 
     {{-- Logout button --}}
     <form method="POST" action="{{ route('logout') }}" style="margin-top: 20px;">
@@ -96,13 +107,17 @@
     <div class="user-menu-container">
         <div class="profile-trigger" id="profileTrigger">
             <span style="color:#94a3b8;">{{ Auth::user()->name ?? 'User Name' }}</span>
-            <div class="avatar"></div>
+            @if(Auth::user()->profile_picture)
+                <img src="{{ Auth::user()->profile_picture }}" class="avatar">
+            @else
+                <div class="avatar-placeholder"></div>
+            @endif
         </div>
         <div class="user-dropdown" id="userDropdown">
             <a href="{{ route('profile.edit') }}">Profile</a>
             <a href="{{ route('posts.drafts') }}">Drafts</a>
             <a href="{{ route('posts.archive') }}">Archive</a>
-            <a href="#">Settings</a>
+            <a href="{{ route('settings') }}">Settings</a>
             <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                 @csrf
                 <a href="#" onclick="event.preventDefault(); this.closest('form').submit();" style="color:#f87171;">Log-out</a>
@@ -134,4 +149,3 @@
 @stack('scripts')
 </body>
 </html>
-

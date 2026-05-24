@@ -38,7 +38,7 @@
         <h2 style="margin-bottom: 20px; font-size: 22px; font-weight: 700; color: #cbd5e1;">Social Media Overview</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <!-- YouTube Card -->
+            <!-- YouTube Card (extra‑large buttons) -->
             <div class="card" id="card-youtube" style="border-left: 4px solid #FF0000;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
                     <i class="fab fa-youtube" style="color: #FF0000; font-size: 24px;"></i>
@@ -46,9 +46,14 @@
                 </div>
                 @if($socialStats['youtube']['connected'])
                     @if($socialStats['youtube']['channel_name'])
-                        <p style="color: #cbd5e1; margin-bottom: 10px; font-size: 15px;">{{ $socialStats['youtube']['channel_name'] }}</p>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            @if($socialStats['youtube']['channel_thumbnail'])
+                                <img src="{{ $socialStats['youtube']['channel_thumbnail'] }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                            @endif
+                            <span style="color: #cbd5e1; font-size: 16px;">{{ $socialStats['youtube']['channel_name'] }}</span>
+                        </div>
                     @endif
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: #cbd5e1; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px; color: #cbd5e1; margin-bottom: 20px;">
                         <div>
                             <p style="color: #64748b;">Subscribers</p>
                             <p style="font-size: 18px; font-weight: 700;">{{ number_format($socialStats['youtube']['subscribers']) }}</p>
@@ -62,17 +67,65 @@
                             <p style="font-size: 18px; font-weight: 700;">{{ number_format($socialStats['youtube']['videos']) }}</p>
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('social.disconnect', 'youtube') }}" style="margin-top:10px;">
+                    <form method="POST" action="{{ route('social.disconnect', 'youtube') }}">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn-new" style="background:#2d2d2d; color:#f87171;">Disconnect YouTube</button>
+                        <button type="submit" class="btn-new"
+                                style="background:#2d2d2d; color:#f87171; padding: 24px 40px; font-size: 18px; border-radius: 12px; margin-top: 10px; display: inline-block;">
+                            Disconnect YouTube
+                        </button>
                     </form>
                 @else
                     <p style="color: #94a3b8; margin-bottom: 10px;">Not connected</p>
-                    <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">
+                    <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
                         Connect to see your channel stats and recent videos.
                     </p>
-                    <a href="{{ route('social.redirect', 'youtube') }}" class="btn-new" style="background:#FF0000;">Connect YouTube</a>
+                    <a href="{{ route('social.redirect', 'youtube') }}" class="btn-new"
+                       style="background:#FF0000; padding: 24px 40px; font-size: 18px; border-radius: 12px; display: inline-block;">
+                        Connect YouTube
+                    </a>
+                @endif
+            </div>
+
+            <!-- GitHub Card (extra‑large buttons) -->
+            <div class="card" id="card-github" style="border-left: 4px solid #6e5494;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <i class="fab fa-github" style="color: #6e5494; font-size: 24px;"></i>
+                    <h3 style="color: white; font-size: 16px; font-weight: 600;">GitHub</h3>
+                </div>
+                @if($socialStats['github']['connected'])
+                    @if($socialStats['github']['username'])
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            @if($socialStats['github']['avatar'])
+                                <img src="{{ $socialStats['github']['avatar'] }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                            @endif
+                            <span style="color: #cbd5e1; font-size: 16px;">{{ $socialStats['github']['username'] }}</span>
+                        </div>
+                    @endif
+                    <div style="margin-bottom: 20px;">
+                        <p style="color: #94a3b8;">Repos: <strong style="color: white;">{{ number_format($socialStats['github']['repos']) }}</strong></p>
+                        <p style="color: #94a3b8;">Followers: <strong style="color: white;">{{ number_format($socialStats['github']['followers']) }}</strong></p>
+                        @if($socialStats['github']['bio'])
+                            <p style="color: #64748b; font-size: 13px;">{{ $socialStats['github']['bio'] }}</p>
+                        @endif
+                    </div>
+                    <form method="POST" action="{{ route('social.disconnect', 'github') }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn-new"
+                                style="background:#2d2d2d; color:#f87171; padding: 24px 40px; font-size: 18px; border-radius: 12px; margin-top: 10px; display: inline-block;">
+                            Disconnect GitHub
+                        </button>
+                    </form>
+                @else
+                    <p style="color: #94a3b8; margin-bottom: 10px;">Not connected</p>
+                    <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
+                        Connect to see your GitHub profile and stats.
+                    </p>
+                    <a href="{{ route('social.redirect', 'github') }}" class="btn-new"
+                       style="background:#6e5494; padding: 24px 40px; font-size: 18px; border-radius: 12px; display: inline-block;">
+                        Connect GitHub
+                    </a>
                 @endif
             </div>
         </div>
