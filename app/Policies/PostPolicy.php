@@ -29,7 +29,8 @@ class PostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->email_verified_at !== null;
+        // Allow any authenticated user to create posts (no enforced email verification)
+        return true;
     }
 
     /**

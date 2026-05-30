@@ -42,7 +42,14 @@ class AuthenticatedSessionController extends Controller
         }
 
         // 3. Attempt authentication
-        $credentials = $request->only('email', 'password');
+        $login = $request->input('email');
+        $password = $request->input('password');
+
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $credentials = ['email' => $login, 'password' => $password];
+        } else {
+            $credentials = ['username' => $login, 'password' => $password];
+        }
         $remember = $request->filled('remember');
 
         if (! Auth::attempt($credentials, $remember)) {
@@ -63,10 +70,6 @@ class AuthenticatedSessionController extends Controller
 
         // 5. Redirect based on email verification status
         $user = Auth::user();
-
-        if (! $user->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice');
-        }
 
         return redirect()->intended(route('dashboard'));
     }

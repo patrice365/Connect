@@ -41,23 +41,23 @@
     <div class="auth-card">
         <a href="/" class="logo">CON<span>NECT</span></a>
         <p class="subtitle">Welcome back to your hub</p>
-        @if ($errors->any())
+        <?php if($errors->any()): ?>
             <div style="background: rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; padding:12px; border-radius:10px; margin-bottom:20px; text-align:left;">
-                @foreach ($errors->all() as $error) <p>{{ $error }}</p> @endforeach
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?> <p><?php echo e($error); ?></p> <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
-        @endif
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-            <div class="form-group"><label for="email">Email Address</label><input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus></div>
+        <?php endif; ?>
+        <form method="POST" action="<?php echo e(route('login')); ?>">
+            <?php echo csrf_field(); ?>
+            <div class="form-group"><label for="email">Email Address</label><input type="email" name="email" id="email" value="<?php echo e(old('email')); ?>" required autofocus></div>
             <div class="form-group"><label for="password">Password</label><input type="password" name="password" id="password" required></div>
             <button type="submit" class="btn-auth">Sign In</button>
         </form>
         <div class="social-divider"><hr><span>or sign in using</span><hr></div>
         <div class="two-buttons">
-            <a href="{{ route('social.redirect', 'youtube') }}" class="social-btn youtube"><i class="fab fa-youtube"></i> YouTube</a>
-            <a href="{{ route('social.redirect', 'github') }}" class="social-btn github"><i class="fab fa-github"></i> GitHub</a>
+            <a href="<?php echo e(route('social.redirect', 'youtube')); ?>" class="social-btn youtube"><i class="fab fa-youtube"></i> YouTube</a>
+            <a href="<?php echo e(route('social.redirect', 'github')); ?>" class="social-btn github"><i class="fab fa-github"></i> GitHub</a>
         </div>
-        <div class="auth-footer">New here? <a href="{{ route('register') }}">Create an account</a></div>
+        <div class="auth-footer">New here? <a href="<?php echo e(route('register')); ?>">Create an account</a></div>
     </div>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\Connect\resources\views/auth/login.blade.php ENDPATH**/ ?>

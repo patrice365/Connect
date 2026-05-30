@@ -3,65 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
+    public function show()
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        $user = Auth::user();
+        return view('profile.show', compact('user'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function edit()
     {
-        $user = $request->user();
+        $user = Auth::user();
+        return view('profile.edit', compact('user'));
+    }
 
-        $user->fill($request->validated());
+    public function update(ProfileUpdateRequest $request)
+    {
+        $user = Auth::user();
 
-        // If a new profile picture URL is provided, update it
-        if ($request->has('profile_picture')) {
-            $user->profile_picture = $request->validated('profile_picture');
-        }
+        $user->name = $request->name;
+        $user->email = $request->email;
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+        if ($request->hasFile('profile_picture')) {
+            if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+            $path = $request->file('profile_picture')->store('profile-photos', 'public');
+            $user->profile_photo_path = $path;
         }
 
         $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return redirect()->route('profile.show')->with('status', 'Profile updated successfully.');
     }
 
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
-
         Auth::logout();
-
         $user->delete();
-
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return redirect('/');
     }
 }

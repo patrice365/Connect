@@ -8,6 +8,7 @@ use App\Models\Reaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -30,141 +31,188 @@ class DashboardController extends Controller
         $connectedPlatforms = $user->socialAccounts()->pluck('provider')->toArray();
 
         $socialStats = [
-            'youtube' => array_merge($this->getYoutubeInfo($user), ['connected' => in_array('youtube', $connectedPlatforms)]),
-            'github'  => array_merge($this->getGithubInfo($user),  ['connected' => in_array('github', $connectedPlatforms)]),
+            'youtube' => $this->getYoutubeInfo($user, in_array('youtube', $connectedPlatforms)),
+            'github'  => $this->getGithubInfo($user, in_array('github', $connectedPlatforms)),
         ];
 
         return view('dashboard', compact('stats', 'socialStats'));
     }
 
     // ==================== YouTube ====================
-    private function getYoutubeInfo($user)
+    private function getYoutubeInfo($user, $isConnected)
     {
+        $default = [
+            'connected'         => $isConnected,
+            'channel_name'      => null,
+            'channel_thumbnail' => null,
+            'subscribers'       => 0,
+            'views'             => 0,
+            'videos'            => 0,
+            'recent'            => [],
+        ];
+
+        if (!$isConnected) {
+            return $default;
+        }
+
         $account = $user->socialAccounts()->where('provider', 'youtube')->first();
-        if (!$account) {
-            return [
-                'channel_name'      => null,
-                'channel_thumbnail' => null,          // ← new
-                'subscribers'       => 0,
-                'views'             => 0,
-                'videos'            => 0,
-                'recent'            => [],
-            ];
+        if (!$account || !$account->access_token) {
+            Log::warning('YouTube account found but no access token', ['user_id' => $user->id]);
+            return $default;
         }
 
         try {
-            // 1. Get channel info
-            $ch = Http::get('https://www.googleapis.com/youtube/v3/channels', [
-                'part'         => 'statistics,snippet',
-                'mine'         => 'true',
-                'access_token' => $account->access_token,
-            ])->json();
-            $channel = $ch['items'][0] ?? null;
-            if (!$channel) {
-                return [
-                    'channel_name'      => null,
-                    'channel_thumbnail' => null,          // ← new
-                    'subscribers'       => 0,
-                    'views'             => 0,
-                    'videos'            => 0,
-                    'recent'            => [],
-                ];
+            // Fetch channel data
+            $channelResponse = Http::withToken($account->access_token)
+                ->get('https://www.googleapis.com/youtube/v3/channels', [
+                    'part' => 'snippet,statistics',
+                    'mine' => 'true',
+                ]);
+
+            if (!$channelResponse->successful()) {
+                Log::error('YouTube channel API failed', [
+                    'status' => $channelResponse->status(),
+                    'body' => $channelResponse->body(),
+                ]);
+                return $default;
             }
 
-            // 2. Search recent videos
-            $searchResponse = Http::get('https://www.googleapis.com/youtube/v3/search', [
-                'part'         => 'snippet',
-                'channelId'    => $channel['id'],
-                'order'        => 'date',
-                'maxResults'   => 5,
-                'type'         => 'video',
-                'access_token' => $account->access_token,
-            ])->json();
+            $channelData = $channelResponse->json();
+            if (empty($channelData['items'])) {
+                Log::error('YouTube channel API returned no items', ['response' => $channelData]);
+                return $default;
+            }
 
-            $videoIds = [];
-            $recent = $searchResponse['items'] ?? [];
+            $channel = $channelData['items'][0];
+            $channelId = $channel['id'];
 
-            foreach ($recent as $item) {
-                if (!empty($item['id']['videoId'])) {
-                    $videoIds[] = $item['id']['videoId'];
+            // Fetch recent videos
+            $searchResponse = Http::withToken($account->access_token)
+                ->get('https://www.googleapis.com/youtube/v3/search', [
+                    'part'       => 'snippet',
+                    'channelId'  => $channelId,
+                    'maxResults' => 6,
+                    'order'      => 'date',
+                    'type'       => 'video',
+                ]);
+
+            $recentVideos = [];
+            if ($searchResponse->successful() && !empty($searchResponse->json()['items'])) {
+                $videoIds = [];
+                foreach ($searchResponse->json()['items'] as $item) {
+                    if (isset($item['id']['videoId'])) {
+                        $videoIds[] = $item['id']['videoId'];
+                        $recentVideos[$item['id']['videoId']] = $item;
+                    }
                 }
+
+                // Fetch statistics for those videos
+                if (!empty($videoIds)) {
+                    $statsResponse = Http::withToken($account->access_token)
+                        ->get('https://www.googleapis.com/youtube/v3/videos', [
+                            'part' => 'statistics',
+                            'id'   => implode(',', $videoIds),
+                        ]);
+
+                    if ($statsResponse->successful()) {
+                        foreach ($statsResponse->json()['items'] ?? [] as $videoStat) {
+                            $vid = $videoStat['id'];
+                            if (isset($recentVideos[$vid])) {
+                                $recentVideos[$vid]['statistics'] = $videoStat['statistics'];
+                            }
+                        }
+                    }
+                }
+
+                // Re-index to plain array
+                $recentVideos = array_values($recentVideos);
             }
 
-            // 3. Fetch statistics for all found videos in one call
-            $stats = [];
-            if (!empty($videoIds)) {
-                $statsResponse = Http::get('https://www.googleapis.com/youtube/v3/videos', [
-                    'part'         => 'statistics',
-                    'id'           => implode(',', $videoIds),
-                    'access_token' => $account->access_token,
-                ])->json();
+            return [
+                'connected'         => true,
+                'channel_name'      => $channel['snippet']['title'] ?? null,
+                'channel_thumbnail' => $channel['snippet']['thumbnails']['default']['url'] ?? null,
+                'subscribers'       => (int)($channel['statistics']['subscriberCount'] ?? 0),
+                'views'             => (int)($channel['statistics']['viewCount'] ?? 0),
+                'videos'            => (int)($channel['statistics']['videoCount'] ?? 0),
+                'recent'            => $recentVideos,
+            ];
+        } catch (\Exception $e) {
+            Log::error('YouTube API exception: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return $default;
+        }
+    }
 
-                foreach ($statsResponse['items'] ?? [] as $video) {
-                    $vid = $video['id'];
-                    $stats[$vid] = [
-                        'likeCount'    => $video['statistics']['likeCount'] ?? 0,
-                        'commentCount' => $video['statistics']['commentCount'] ?? 0,
+    // ==================== GitHub ====================
+    private function getGithubInfo($user, $isConnected)
+    {
+        $default = [
+            'connected' => $isConnected,
+            'username'  => null,
+            'repos'     => 0,
+            'followers' => 0,
+            'avatar'    => null,
+            'bio'       => null,
+            'repo_list' => [],
+        ];
+
+        if (!$isConnected) {
+            return $default;
+        }
+
+        $account = $user->socialAccounts()->where('provider', 'github')->first();
+        if (!$account || !$account->access_token) {
+            Log::warning('GitHub account found but no access token', ['user_id' => $user->id]);
+            return $default;
+        }
+
+        try {
+            // User profile
+            $userResponse = Http::withToken($account->access_token)
+                ->get('https://api.github.com/user');
+
+            if (!$userResponse->successful()) {
+                Log::error('GitHub user API failed', ['status' => $userResponse->status()]);
+                return $default;
+            }
+
+            $userData = $userResponse->json();
+
+            // Repositories
+            $reposResponse = Http::withToken($account->access_token)
+                ->get('https://api.github.com/user/repos', [
+                    'sort'      => 'updated',
+                    'direction' => 'desc',
+                    'per_page'  => 6,
+                ]);
+
+            $repoList = [];
+            if ($reposResponse->successful()) {
+                foreach ($reposResponse->json() as $repo) {
+                    $repoList[] = [
+                        'name'        => $repo['name'],
+                        'description' => $repo['description'],
+                        'language'    => $repo['language'],
+                        'stars'       => $repo['stargazers_count'],
+                        'url'         => $repo['html_url'],
                     ];
                 }
             }
 
-            // Merge statistics into each recent item
-            foreach ($recent as &$item) {
-                $vid = $item['id']['videoId'] ?? '';
-                $item['statistics'] = $stats[$vid] ?? ['likeCount' => 0, 'commentCount' => 0];
-            }
-
             return [
-                'channel_name'      => $channel['snippet']['title'] ?? null,
-                'channel_thumbnail' => $channel['snippet']['thumbnails']['default']['url'] ?? null,   // ← new
-                'subscribers'       => $channel['statistics']['subscriberCount'] ?? 0,
-                'views'             => $channel['statistics']['viewCount'] ?? 0,
-                'videos'            => $channel['statistics']['videoCount'] ?? 0,
-                'recent'            => $recent,
+                'connected' => true,
+                'username'  => $userData['login'] ?? null,
+                'repos'     => $userData['public_repos'] ?? 0,
+                'followers' => $userData['followers'] ?? 0,
+                'avatar'    => $userData['avatar_url'] ?? null,
+                'bio'       => $userData['bio'] ?? null,
+                'repo_list' => $repoList,
             ];
         } catch (\Exception $e) {
-            \Log::error('YouTube API error: ' . $e->getMessage());
-            return [
-                'channel_name'      => null,
-                'channel_thumbnail' => null,          // ← new
-                'subscribers'       => 0,
-                'views'             => 0,
-                'videos'            => 0,
-                'recent'            => [],
-            ];
-        }
-    }
-
-    private function getGithubInfo($user)
-    {
-        $account = $user->socialAccounts()->where('provider', 'github')->first();
-        if (!$account) {
-            return [
-                'username'   => null,
-                'repos'      => 0,
-                'followers'  => 0,
-                'avatar'     => null,
-                'bio'        => null,
-            ];
-        }
-
-        try {
-            $response = Http::withToken($account->access_token)
-                ->get('https://api.github.com/user');
-
-            $data = $response->json();
-
-            return [
-                'username'   => $data['login'] ?? null,
-                'repos'      => $data['public_repos'] ?? 0,
-                'followers'  => $data['followers'] ?? 0,
-                'avatar'     => $data['avatar_url'] ?? null,
-                'bio'        => $data['bio'] ?? null,
-            ];
-        } catch (\Exception $e) {
-            \Log::error('GitHub API error: ' . $e->getMessage());
-            return ['username' => null, 'repos' => 0, 'followers' => 0, 'avatar' => null, 'bio' => null];
+            Log::error('GitHub API exception: ' . $e->getMessage());
+            return $default;
         }
     }
 }
-

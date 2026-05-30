@@ -48,15 +48,15 @@ return [
     // Uses Socialite "google" driver
     // =============================================
     'google' => [
-        'client_id'     => env('YOUTUBE_CLIENT_ID'),
-        'client_secret' => env('YOUTUBE_CLIENT_SECRET'),
-        'redirect'      => env('APP_URL').'/social/callback/youtube',
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => 'https://eligibly-bobbed-gag.ngrok-free.dev/social/callback/youtube',
     ],
 
     'github' => [
         'client_id'     => env('GITHUB_CLIENT_ID'),
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
-        'redirect'      => env('APP_URL').'/social/callback/github',
+        'redirect'      => 'https://eligibly-bobbed-gag.ngrok-free.dev/social/callback/github',
     ],
 
 ];

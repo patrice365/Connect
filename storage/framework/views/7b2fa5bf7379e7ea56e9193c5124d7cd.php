@@ -250,10 +250,10 @@
 <div class="bg-container"></div>
 
 <nav>
-    <a href="{{ url('/') }}" class="logo">CON<span>NECT</span></a>
+    <a href="<?php echo e(url('/')); ?>" class="logo">CON<span>NECT</span></a>
     <div class="nav-auth">
-        <a href="{{ route('login') }}" class="nav-btn-login btn">Login</a>
-        <a href="{{ route('register') }}" class="nav-btn-signup btn">Sign Up</a>
+        <a href="<?php echo e(route('login')); ?>" class="nav-btn-login btn">Login</a>
+        <a href="<?php echo e(route('register')); ?>" class="nav-btn-signup btn">Sign Up</a>
     </div>
 </nav>
 
@@ -264,7 +264,7 @@
         <span class="sources">YouTube and GitHub</span>
         into a single, high-performance hub.
     </p>
-    <a href="{{ route('register') }}" class="nav-btn-signup btn hero-btn">Get Started</a>
+    <a href="<?php echo e(route('register')); ?>" class="nav-btn-signup btn hero-btn">Get Started</a>
 </main>
 
 <footer>
@@ -283,11 +283,11 @@
                     <a href="#"><i class="fab fa-facebook"></i></a>
                     <a href="#"><i class="fab fa-instagram"></i></a>
                 </div>
-                <span class="copyright">&copy; {{ date('Y') }} Connect Inc.</span>
+                <span class="copyright">&copy; <?php echo e(date('Y')); ?> Connect Inc.</span>
             </div>
         </div>
     </div>
 </footer>
 
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\Connect\resources\views/welcome.blade.php ENDPATH**/ ?>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Google_Client;
 use Google_Service_YouTube;
 use Google_Service_YouTube_Video;
@@ -232,6 +233,181 @@ class PostController extends Controller
         } catch (\Exception $e) {
             \Log::error('GitHub repo creation failed: ' . $e->getMessage());
             return back()->with('error', 'Repository creation failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Post a comment to a YouTube video using the user's connected YouTube account.
+     */
+    public function postYouTubeComment(Request $request, $videoId)
+    {
+        $request->validate([
+            'comment' => 'required|string|max:2000',
+        ]);
+
+        $user = Auth::user();
+        $youtubeAccount = $user->socialAccounts()->where('provider', 'youtube')->first();
+        if (!$youtubeAccount) {
+            return response()->json(['error' => 'YouTube not connected'], 403);
+        }
+
+        $client = new Google_Client();
+        $client->setClientId(env('YOUTUBE_CLIENT_ID'));
+        $client->setClientSecret(env('YOUTUBE_CLIENT_SECRET'));
+        $client->setAccessToken($youtubeAccount->access_token);
+        $client->setScopes(['https://www.googleapis.com/auth/youtube.force-ssl']);
+
+        if ($client->isAccessTokenExpired() && $youtubeAccount->refresh_token) {
+            $client->fetchAccessTokenWithRefreshToken($youtubeAccount->refresh_token);
+            $youtubeAccount->update([
+                'access_token'  => $client->getAccessToken()['access_token'] ?? $youtubeAccount->access_token,
+                'refresh_token' => $client->getAccessToken()['refresh_token'] ?? $youtubeAccount->refresh_token,
+            ]);
+        }
+
+        $accessToken = $client->getAccessToken()['access_token'] ?? $youtubeAccount->access_token;
+
+        try {
+            $resp = Http::withToken($accessToken)->post('https://www.googleapis.com/youtube/v3/commentThreads?part=snippet', [
+                'snippet' => [
+                    'videoId' => $videoId,
+                    'topLevelComment' => [
+                        'snippet' => [
+                            'textOriginal' => $request->input('comment'),
+                        ],
+                    ],
+                ],
+            ]);
+
+            if ($resp->successful()) {
+                return response()->json(['success' => true, 'data' => $resp->json()]);
+            }
+
+            // If Google returns 401, prompt the frontend to re-connect the account
+            if ($resp->status() === 401) {
+                return response()->json([
+                    'error' => 'unauthorized',
+                    'message' => 'YouTube authorization required. Please reconnect your account.',
+                    'reconnect_url' => route('social.redirect', ['provider' => 'youtube']),
+                ], 401);
+            }
+
+            return response()->json(['error' => $resp->body()], $resp->status() ?: 500);
+        } catch (\Exception $e) {
+            \Log::error('YouTube comment failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Comment failed: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Create a GitHub gist using the connected account.
+     * Expects `description`, `public` (bool), and `files` as an associative array: files["name.txt"] = content
+     */
+    public function createGithubGist(Request $request)
+    {
+        $request->validate([
+            'description' => 'nullable|string|max:255',
+            'public' => 'nullable|boolean',
+            'files' => 'required|array',
+        ]);
+
+        $user = Auth::user();
+        $githubAccount = $user->socialAccounts()->where('provider', 'github')->first();
+        if (!$githubAccount) {
+            return back()->with('error', 'GitHub not connected');
+        }
+
+        $payload = [
+            'description' => $request->input('description', ''),
+            'public' => (bool) $request->input('public', true),
+            'files' => [],
+        ];
+
+        foreach ($request->input('files', []) as $name => $content) {
+            $payload['files'][$name] = ['content' => $content];
+        }
+
+        try {
+            $resp = Http::withToken($githubAccount->access_token)
+                ->post('https://api.github.com/gists', $payload);
+
+            if ($resp->successful()) {
+                return redirect()->back()->with('success', 'Gist created!');
+            }
+            \Log::error('GitHub gist failed: ' . $resp->body());
+            return back()->with('error', 'Failed to create gist');
+        } catch (\Exception $e) {
+            \Log::error('GitHub gist exception: ' . $e->getMessage());
+            return back()->with('error', 'Failed to create gist: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Push (create/update) a file to a GitHub repo using the connected account.
+     * Expects: owner (optional), repo, path, content, message (optional), branch (optional)
+     */
+    public function pushToGithub(Request $request)
+    {
+        $request->validate([
+            'repo' => 'required|string',
+            'path' => 'required|string',
+            'content' => 'required|string',
+            'owner' => 'nullable|string',
+            'message' => 'nullable|string|max:255',
+            'branch' => 'nullable|string',
+        ]);
+
+        $user = Auth::user();
+        $githubAccount = $user->socialAccounts()->where('provider', 'github')->first();
+        if (!$githubAccount) {
+            return back()->with('error', 'GitHub not connected');
+        }
+
+        try {
+            // Determine owner (username) if not provided
+            $owner = $request->input('owner');
+            if (!$owner) {
+                $me = Http::withToken($githubAccount->access_token)->get('https://api.github.com/user')->json();
+                $owner = $me['login'] ?? null;
+            }
+            if (!$owner) {
+                return back()->with('error', 'Unable to determine GitHub owner');
+            }
+
+            $repo = $request->input('repo');
+            $path = ltrim($request->input('path'), '/');
+            $branch = $request->input('branch');
+            $message = $request->input('message', 'Update ' . $path);
+
+            // Check if file exists to get SHA
+            $url = "https://api.github.com/repos/{$owner}/{$repo}/contents/{$path}";
+            $query = [];
+            if ($branch) $query['ref'] = $branch;
+
+            $get = Http::withToken($githubAccount->access_token)->get($url, $query);
+            $body = [
+                'message' => $message,
+                'content' => base64_encode($request->input('content')),
+            ];
+            if ($branch) $body['branch'] = $branch;
+            $committer = ['name' => $user->name, 'email' => $user->email];
+            $body['committer'] = $committer;
+
+            if ($get->successful()) {
+                $sha = $get->json()['sha'] ?? null;
+                if ($sha) $body['sha'] = $sha;
+            }
+
+            $resp = Http::withToken($githubAccount->access_token)->put($url, $body);
+
+            if ($resp->successful()) {
+                return redirect()->back()->with('success', 'File pushed to GitHub');
+            }
+            \Log::error('GitHub push failed: ' . $resp->body());
+            return back()->with('error', 'Failed to push file to GitHub');
+        } catch (\Exception $e) {
+            \Log::error('GitHub push exception: ' . $e->getMessage());
+            return back()->with('error', 'Failed to push file: ' . $e->getMessage());
         }
     }
 
